@@ -2,6 +2,9 @@ const puppeteer = require('puppeteer');
 const CONFIG = require('./config');
 const fs = require('fs');
 const path = require('path');
+const util = require('util');
+
+const writeFile = util.promisify(fs.writeFile);
 
 async function processElements(CONFIG) {
     // Create an instance of the chrome browser
@@ -10,26 +13,40 @@ async function processElements(CONFIG) {
     for (const component of CONFIG.components) {
         // Create a new page
         const page = await browser.newPage();
-    
+
         // Set some dimensions to the screen
         page.setViewport(component.viewport);
-    
-        // Navigate to url
-        await page.goto(component.url);
-    
-        await page.waitForSelector(component.selector)
 
-        await page.evaluate((component) => {
-            const t = document.querySelectorAll(component.selector)[0].outerHTML;
-            return t;
+        // Navigate to url
+        console.log("fetching url:", component.url)
+        try {
+            await page.goto(component.url);
+        } catch (error) {
+            console.log(`The URL ${component.url} can’t be reached`);
+            throw error;
+        }
+
+        try {
+            await page.waitForSelector(component.selector)
+        } catch (error) {
+            console.log(`It seems that the selector ${component.selector} is not present in url ${component.url}`);
+            throw error;
+        }
+
+        const element = await page.evaluate((component) => {
+            return document.querySelectorAll(component.selector)[0].outerHTML;
         }, component)
-        .then((element) => {
-            const output_file_path = path.resolve(CONFIG.base_path, component.file_path);
-            fs.writeFile(output_file_path, element, (err) => {
-                if (err) throw err;
-                console.log(`${output_file_path} generated!`);
-            });
-        });
+
+        const output_file_path = path.resolve(CONFIG.base_path, component.file_path);
+
+        try {
+            await writeFile(output_file_path, element)
+            console.log(`${output_file_path} generated!`);
+        } catch (error) {
+            console.log(`there were issues writing ${output_file_path}`);
+            throw error;
+        }
+
     }
 
     // Close Browser
@@ -37,5 +54,12 @@ async function processElements(CONFIG) {
 };
 
 module.exports = (CONFIG) => {
-    processElements(CONFIG);
+    processElements(CONFIG)
+        .then(() => {
+            console.log("done");
+        })
+        .catch((error) => {
+            console.log(error)
+            process.exit(1);
+        });
 }
