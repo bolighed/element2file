@@ -1,6 +1,6 @@
 {
   "name": "element2file",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "tool that allows you to generate (and save) pre-rendered content given an url a selector",
   "main": "index.js",
   "scripts": {
