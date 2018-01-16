@@ -8,7 +8,11 @@ const writeFile = util.promisify(fs.writeFile);
 
 async function processElements(CONFIG) {
     // Create an instance of the chrome browser
-    const browser = await puppeteer.launch();
+    const browser = await puppeteer.launch({
+        headless: true,
+        handleSIGINT: true,
+        args: CONFIG.browser_args
+    });
 
     for (const component of CONFIG.components) {
         // Create a new page
@@ -56,7 +60,7 @@ async function processElements(CONFIG) {
 module.exports = (CONFIG) => {
     processElements(CONFIG)
         .then(() => {
-            console.log("done");
+            console.log("DONE!");
         })
         .catch((error) => {
             console.log(error)

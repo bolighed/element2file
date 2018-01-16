@@ -1,4 +1,10 @@
 module.exports = config = {
+    browser_args: [
+        '--no-sandbox',
+    	//'--disable-setuid-sandbox',
+        '--enable-logging', 
+        '--v=4'
+    ],
     base_path: '../backend/home/templates/home',
     components: [{
         viewport: {width: 600, height: 900, scale: 1},
